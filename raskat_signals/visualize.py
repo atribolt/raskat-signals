@@ -10,14 +10,14 @@ def show_signal(file: Path):
   print('Show: ', file)
   with file.open('rb') as f:
     sig = rs.SignalFile.create(f)
-  s = (sig.samples * 3.3) / 2**10
+  s = (sig.samples * sig.adc_reference_v) / (2 ** sig.adc_bits)
   fft = np.fft.fft(s)
-  mg  = (fft ** 2) / fft.size / 1000
-  fft = 10 * np.log10(mg * 1000)
+  mg = (fft ** 2) / fft.size / sig.power_resitance
+  fft = 10 * np.log10(mg)
   freq = np.fft.fftfreq(s.size, 1 / sig.sample_rate)[:fft.size // 2]
   fig, (ax0, ax1) = plt.subplots(2, 1)
   ax0.plot(s)
-  ax1.plot(freq, fft[:fft.size// 2])
+  ax1.plot(freq, fft[:fft.size//2])
   plt.show()
 
 
@@ -33,8 +33,13 @@ def main():
     sys.exit(1)
 
   if signal.is_dir():
-    signal = [signal]
+    signals = signal.glob('*.sig')
+  else:
+    signals = [signal]
 
-  
-  for file in Path(sys.argv[1]).glob('*.sig'):
+  for file in signals:
     show_signal(file)
+
+
+if __name__ == '__main__':
+  main()

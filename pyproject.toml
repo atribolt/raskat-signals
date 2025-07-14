@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "raskat-signals"
+name = "raskat_signals"
 description = "raSkat module for working with signals"
 authors = [{ name="Youriy Volkov", email="atribolt@gmail.com" }]
 license = { text = "GPL3" }
