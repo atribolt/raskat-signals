@@ -7,11 +7,14 @@ from pathlib import Path
 
 
 def show_signal(file: Path):
-  print('Show: ', file)
   with file.open('rb') as f:
     sig = rs.SignalFile.create(f)
-  s = (sig.samples * sig.adc_reference_v) / (2 ** sig.adc_bits)
-  fft = np.fft.fft(s)
+  s = sig.samples_voltage
+
+  print('Show: ', file)
+  print('\t', sig)
+
+  fft = np.fft.fft(s).real
   mg = (fft ** 2) / fft.size / sig.power_resitance
   fft = 10 * np.log10(mg)
   freq = np.fft.fftfreq(s.size, 1 / sig.sample_rate)[:fft.size // 2]
