@@ -21,7 +21,7 @@ include = ["raskat_signals*"]
 version = {attr="raskat_signals.version.VERSION"}
 
 [project.optional-dependencies]
-dev = ["ruff"]
+dev = ["ruff", "build"]
 visualize = ["matplotlib"]
 
 [project.scripts]
