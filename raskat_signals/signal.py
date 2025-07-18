@@ -44,11 +44,11 @@ class SignalFile:
 
   @property
   def adc_resolution(self) -> int:
-    return 2 ** self.adc_bits
+    return 2 ** self.adc_bits - 1
 
   @property
   def samples_voltage(self) -> np.ndarray:
-    return (self.samples * self.adc_reference_v) / self.adc_resolution
+    return (self.samples * self.adc_reference_v) / self.adc_resolution - (self.adc_reference_v / 2)
 
   @property
   def end_time(self) -> datetime:
