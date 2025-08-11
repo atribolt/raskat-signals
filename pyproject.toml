@@ -22,7 +22,7 @@ version = {attr="raskat_signals.version.VERSION"}
 
 [project.optional-dependencies]
 dev = ["ruff", "build"]
-visualize = ["matplotlib"]
+visualize = ["matplotlib", "scipy"]
 
 [project.scripts]
 raskat-signal = "raskat_signals.visualize:main"

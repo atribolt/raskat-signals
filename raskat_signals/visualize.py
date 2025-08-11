@@ -4,44 +4,92 @@ import raskat_signals as rs
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from pathlib import Path
+import scipy.signal as ss
+from dataclasses import dataclass
 
 
-def show_signal(file: Path):
+@dataclass
+class FilterConfig:
+  frequency: int
+  order: int
+
+
+def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, autocor: bool = False):
   with file.open('rb') as f:
     sig = rs.SignalFile.create(f)
-  s = sig.samples_voltage
 
   print('Show: ', file)
   print('\t', sig)
 
-  fft = np.fft.fft(s).real
+  filters = []
+  if lpf:
+    filters.append(ss.butter(lpf.order, lpf.frequency, 'low', False, fs=sig.sample_rate, output='sos'))
+
+  if hpf:
+    filters.append(ss.butter(hpf.order, hpf.frequency, 'high', False, fs=sig.sample_rate, output='sos'))
+
+  signal = sig.samples_voltage - np.mean(sig.samples_voltage)
+  signal = signal / np.max(np.absolute(signal))
+  for filt in filters:
+    signal = ss.sosfiltfilt(filt, signal)
+
+  fft = np.fft.fft(signal).real
   mg = (fft ** 2) / fft.size / sig.power_resitance
   fft = 10 * np.log10(mg)
-  freq = np.fft.fftfreq(s.size, 1 / sig.sample_rate)[:fft.size // 2]
-  fig, (ax0, ax1) = plt.subplots(2, 1)
-  ax0.plot(s)
-  ax1.plot(freq, fft[:fft.size//2])
+  freq = np.fft.fftfreq(signal.size, 1 / sig.sample_rate)[:fft.size // 2]
+  fig, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[5, 2])
+
+  if autocor:
+    autocor = np.correlate(signal, signal, 'same')
+    ax0.plot(autocor / np.max(autocor), ls='-.', lw=0.4, label='Autocorrelation')
+
+  ax0.plot(sig.samples_voltage / np.max(np.absolute(sig.samples_voltage)), ls=':', lw=0.5, label='Origin signal')
+  if lpf or hpf:
+    ax0.plot(signal, lw=1, label='Filtered signal')
+
+  ax1.plot(freq, fft[:fft.size//2], label='Spectrogram')
+
+  ax0.legend()
+  ax1.legend()
+  fig.canvas.manager.set_window_title(str(sig))
   plt.show()
 
 
 def main():
   parser = ArgumentParser('raskat-signal')
-  parser.add_argument('-s', '--signal', help='Dir with signals or signal file', type=Path, required=True)
+  parser.add_argument('-L', '--low-pass', help='Apply low pass filter with you frequency', default=None, type=int)
+  parser.add_argument('--low-pass-order', help='Low pass filter order', default=10, type=int)
+  parser.add_argument('-H', '--high-pass', help='Apply high pass filter with you frequency', default=None, type=int)
+  parser.add_argument('--high-pass-order', help='High pass filter order', default=10, type=int)
+  parser.add_argument('--autocor', help='Show autocorrelation for signal', action='store_true', default=False)
+  parser.add_argument(dest='signal', nargs='+', help='Dir with signals or signal file', type=Path)
   args = parser.parse_args()
 
-  signal: Path = args.signal
+  signals: list[Path] = args.signal
 
-  if not signal.exists():
-    print('Signal file is not exists')
-    sys.exit(1)
+  lpf = None
+  if args.low_pass:
+    lpf = FilterConfig(args.low_pass, args.low_pass_order)
 
-  if signal.is_dir():
-    signals = signal.glob('*.sig')
-  else:
-    signals = [signal]
+  hpf = None
+  if args.high_pass:
+    hpf = FilterConfig(args.high_pass, args.high_pass_order)
 
-  for file in signals:
-    show_signal(file)
+  try:
+    for path in signals:
+      if not path.exists():
+        print(f'Path is not exists: {path}')
+        continue
+
+      if path.is_dir():
+        signal = path.glob('*.sig')
+      else:
+        signal = [path]
+
+      for sign in signal:
+        show_signal(sign, lpf, hpf, autocor=args.autocor)
+  except KeyboardInterrupt:
+    pass
 
 
 if __name__ == '__main__':
