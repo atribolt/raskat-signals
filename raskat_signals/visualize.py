@@ -31,7 +31,6 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
     filters.append(ss.butter(hpf.order, hpf.frequency, 'high', False, fs=sig.sample_rate, output='sos'))
 
   signal = sig.samples_voltage - np.mean(sig.samples_voltage)
-  signal = signal / np.max(np.absolute(signal))
   for filt in filters:
     signal = ss.sosfiltfilt(filt, signal)
 
@@ -45,7 +44,7 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
     autocor = np.correlate(signal, signal, 'same')
     ax0.plot(autocor / np.max(autocor), ls='-.', lw=0.4, label='Autocorrelation')
 
-  ax0.plot(sig.samples_voltage / np.max(np.absolute(sig.samples_voltage)), ls=':', lw=0.5 if (lpf or hpf) else 1, label='Origin signal')
+  ax0.plot(sig.samples_voltage, ls=':', lw=0.5 if (lpf or hpf) else 1, label='Origin signal')
   ax0: plt.Axes
   ax0.axhline(sig.threshold_voltage, 0, signal.size, ls='--', lw=0.5, color='black', label='Threshold Max')
   ax0.axhline(-sig.threshold_voltage, 0, signal.size, ls='--', lw=0.5, color='black', label='Threshold Min')
