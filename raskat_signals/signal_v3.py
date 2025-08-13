@@ -41,3 +41,15 @@ class SignalFileV3(SignalFile):
 
     self.samples = np.array(up.unpack(), dtype=int)
     assert self.samples.size > 0, 'Invalid signal length'
+    return up
+
+
+class SignalFileV31(SignalFileV3):
+  log = getLogger('SignalFileV31')
+  SignalFile.PARSER[4] = lambda: SignalFileV31()
+
+  format_version = 4
+
+  def _load_from_io(self, source):
+    up = super()._load_from_io(source)
+    self.threshold = int(up.unpack())

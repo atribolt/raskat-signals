@@ -34,10 +34,15 @@ class SignalFile:
   adc_bits: int = 10
   adc_reference_v: float = 3.3
   antenna_type: AntennaType = AntennaType.Unknown
+  threshold: int = 0
 
   def _load_from_io(self, source: io.IOBase):
     raise NotImplementedError('Unknown format version')
-  
+
+  @property
+  def threshold_voltage(self) -> float:
+    return (self.threshold * self.adc_reference_v) / self.adc_resolution - (self.adc_reference_v / 2)
+
   @property
   def interval(self) -> timedelta:
     return timedelta(seconds=1) / self.sample_rate
