@@ -26,6 +26,7 @@ visualize = ["matplotlib", "scipy"]
 
 [project.scripts]
 raskat-signal = "raskat_signals.visualize:main"
+raskat-dump = "raskat_signals.dump:main"
 
 
 # Ruff configure

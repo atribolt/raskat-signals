@@ -39,6 +39,20 @@ class SignalFile:
   def _load_from_io(self, source: io.IOBase):
     raise NotImplementedError('Unknown format version')
 
+  def tojson(self) -> str:
+    import json
+    return json.dumps({
+      'version': self.format_version,
+      'begin_time': self.begin_time.isoformat(),
+      'sample_rate': self.sample_rate,
+      'lon': self.longitude,
+      'lat': self.latitude,
+      'alt': self.altitude,
+      'samples': self.samples_voltage.tolist(),
+      'overflow': self.has_overflow,
+      'threshold': self.threshold_voltage
+    })
+
   @property
   def threshold_voltage(self) -> float:
     return (self.threshold * self.adc_reference_v) / self.adc_resolution - (self.adc_reference_v / 2)

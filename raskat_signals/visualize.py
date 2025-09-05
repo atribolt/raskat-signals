@@ -44,7 +44,7 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
     autocor = np.correlate(signal, signal, 'same')
     ax0.plot(autocor / np.max(autocor), ls='-.', lw=0.4, label='Autocorrelation')
 
-  ax0.plot(sig.samples_voltage, ls=':', lw=0.5 if (lpf or hpf) else 1, label='Origin signal')
+  ax0.plot(sig.samples_voltage, ls=':' if lpf or hpf else '-', lw=0.5 if (lpf or hpf) else 1, label='Origin signal')
   ax0: plt.Axes
   ax0.axhline(sig.threshold_voltage, 0, signal.size, ls='--', lw=0.5, color='black', label='Threshold Max')
   ax0.axhline(-sig.threshold_voltage, 0, signal.size, ls='--', lw=0.5, color='black', label='Threshold Min')
@@ -86,7 +86,7 @@ def main():
         continue
 
       if path.is_dir():
-        signal = path.glob('*.sig')
+        signal = path.rglob('*.sig')
       else:
         signal = [path]
 
