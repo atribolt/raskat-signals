@@ -1,6 +1,7 @@
+import json
 import sys
 from random import sample
-
+import pprint
 import numpy as np
 import raskat_signals as rs
 import matplotlib.pyplot as plt
@@ -22,6 +23,7 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
 
   print('Show: ', file)
   print('\t', sig)
+  print(json.dumps(sig.characteristics(), indent=2))
 
   filters = []
   if lpf:

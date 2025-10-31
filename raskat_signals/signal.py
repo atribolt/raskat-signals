@@ -102,13 +102,68 @@ class SignalFile:
   @property
   def altitude(self):
     return self.coordinates.altitude
-  
+
+  def characteristics(self, **kwargs):
+    """
+    Извлечение характеристик сигнала
+
+    :keyword lf_min_freq: Минимальная частота в герцах для спектрального анализа (по умолчанию 1 кГц)
+    :keyword lf_max_freq: Максимальная частота в герцах для спектрального анализа (по умолчанию 50 кГц)
+
+    :return: Характеристика сигнала
+    """
+
+    result = {}
+
+    sig = self.samples_voltage
+    abs_sig = np.abs(sig)
+    abs_sig_max = np.max(abs_sig)
+
+    sig /= abs_sig_max
+    abs_sig /= abs_sig_max
+
+    abs_sig_max = 1
+
+    threshold = 0.7 * abs_sig_max
+    above_threshold = abs_sig > threshold
+    result['impulse_duration'] = np.sum(above_threshold) / self.sample_rate
+
+    diff_sig = np.diff(sig)
+    result['max_rise_rate'] = np.max(diff_sig) if len(diff_sig) > 0 else 0
+    result['max_fall_rate'] = np.min(diff_sig) if len(diff_sig) > 0 else 0
+    result['peak_to_rms'] = abs_sig_max / (np.sqrt(np.mean(sig ** 2)) + 1e-10)
+
+    fft_resolution = sig.size / self.sample_rate
+    min_freq = int(kwargs.get('lf_min_freq', 1_000))
+    max_freq = int(kwargs.get('lf_max_freq', 50_000))
+
+    fft = np.fft.fft(sig)
+    magnitude = np.abs(fft)
+    magnitude_sum = float(np.sum(magnitude))
+
+    lf_mag = fft[int(min_freq * fft_resolution):int(max_freq * fft_resolution)]
+    hf_mag = fft[int(max_freq * fft_resolution):]
+
+    result['lf_energy_ratio'] = (np.sum(lf_mag) / magnitude_sum).real
+    result['hf_energy_ratio'] = (np.sum(hf_mag) / magnitude_sum).real
+
+    result['envelope_mean'] = np.mean(abs_sig)
+    result['envelope_std'] = np.std(abs_sig)
+
+    zero_crossings = np.where(np.diff(np.sign(diff_sig)))[0]
+    result['extremum_count'] = len(zero_crossings)
+
+    autocorr = np.correlate(sig, sig, mode='full')
+    autocorr = autocorr[len(autocorr)//2:]
+    result['autocorr_peak_ratio'] = autocorr[1] / autocorr[0] if autocorr[0] > 0 else 0
+    return result
+
   def __str__(self):
     s = ''
     return f'v{self.format_version}, {self.begin_time}, {self.sample_rate}Hz, {self.coordinates}, ' \
            f' adc resistance: {self.power_resitance} Om, adc bits: {self.adc_bits}, ' \
            f'adc vref: {self.adc_reference_v:.2f}V, ' \
-           f'overflow: {self.has_overflow}, signal length: {self.samples.size}'
+           f'overflow: {self.has_overflow}, signal length: {self.samples.size / self.sample_rate}s'
   
   def __repr__(self):
     return f'SignalFile({self.__str__()})'
