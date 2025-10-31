@@ -1,7 +1,4 @@
 import json
-import sys
-from random import sample
-import pprint
 import numpy as np
 import raskat_signals as rs
 import matplotlib.pyplot as plt
@@ -23,20 +20,23 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
 
   print('Show: ', file)
   print('\t', sig)
-  print(json.dumps(sig.characteristics(), indent=2))
+  print(json.dumps(rs.signal.characteristics(sig.samples_voltage), indent=2))
 
   filters = []
-  if lpf:
-    filters.append(ss.butter(lpf.order, lpf.frequency, 'low', False, fs=sig.sample_rate, output='sos'))
 
   if hpf:
     filters.append(ss.butter(hpf.order, hpf.frequency, 'high', False, fs=sig.sample_rate, output='sos'))
 
-  signal = sig.samples_voltage - np.mean(sig.samples_voltage)
+  if lpf:
+    filters.append(ss.butter(lpf.order, lpf.frequency, 'low', False, fs=sig.sample_rate, output='sos'))
+
+  orig_sig = signal = sig.samples_voltage - np.mean(sig.samples_voltage)
   for filt in filters:
     signal = ss.sosfiltfilt(filt, signal)
+    print('Characteristics after filter:')
+    print(json.dumps(rs.signal.characteristics(signal), indent=2))
 
-  fft = np.fft.fft(signal).real
+  fft = np.fft.fft(signal).real ** 2
   mg = (fft ** 2) / fft.size / sig.power_resitance
   fft = 10 * np.log10(mg)
   freq = np.fft.fftfreq(signal.size, 1 / sig.sample_rate)[:fft.size // 2]
@@ -46,7 +46,7 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
     autocor = np.correlate(signal, signal, 'same')
     ax0.plot(autocor / np.max(autocor), ls='-.', lw=0.4, label='Autocorrelation')
 
-  ax0.plot(sig.samples_voltage, ls=':' if lpf or hpf else '-', lw=0.5 if (lpf or hpf) else 1, label='Origin signal')
+  ax0.plot(orig_sig, ls=':' if lpf or hpf else '-', lw=0.5 if (lpf or hpf) else 1, label='Origin signal')
   ax0: plt.Axes
   ax0.axhline(sig.threshold_voltage, 0, signal.size, ls='--', lw=0.5, color='black', label='Threshold Max')
   ax0.axhline(-sig.threshold_voltage, 0, signal.size, ls='--', lw=0.5, color='black', label='Threshold Min')
