@@ -1,4 +1,5 @@
 import json
+import pprint
 import numpy as np
 import raskat_signals as rs
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
 
   print('Show: ', file)
   print('\t', sig)
-  print(json.dumps(rs.signal.characteristics(sig.samples_voltage), indent=2))
+  print(json.dumps(rs.signal.characteristics(sig.samples_voltage)._asdict(), indent=2))
 
   filters = []
 
@@ -34,7 +35,7 @@ def show_signal(file: Path, lpf: FilterConfig = None, hpf: FilterConfig = None, 
   for filt in filters:
     signal = ss.sosfiltfilt(filt, signal)
     print('Characteristics after filter:')
-    print(json.dumps(rs.signal.characteristics(signal), indent=2))
+    print(json.dumps(rs.signal.characteristics(sig.samples_voltage)._asdict(), indent=2))
 
   fft = np.fft.fft(signal).real ** 2
   mg = (fft ** 2) / fft.size / sig.power_resitance

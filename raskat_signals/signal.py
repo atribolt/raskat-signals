@@ -114,7 +114,19 @@ class SignalFile:
     return f'SignalFile({self.__str__()})'
 
 
-def characteristics(signal: np.ndarray, **kwargs):
+class SignalFeatures(NamedTuple):
+  impusle_duration: float
+  max_rise_rate: float
+  max_fall_rate: float
+  peak_to_rms: float
+  lf_energy_ratio: float
+  hf_energy_ratio: float
+  envelope_mean: float
+  envelope_std: float
+  autocorr_peak_ratio: float
+
+
+def characteristics(signal: np.ndarray, **kwargs) -> SignalFeatures:
   """
   Извлечение характеристик сигнала
 
@@ -141,12 +153,12 @@ def characteristics(signal: np.ndarray, **kwargs):
 
   threshold = k_threshold * abs_sig_max
   above_threshold = abs_sig > threshold
-  result['impulse_duration'] = (np.sum(above_threshold) / sample_rate)
+  impulse_duration = float(np.sum(above_threshold) / sample_rate)
 
   diff_sig = np.diff(sig)
-  result['max_rise_rate'] = np.max(diff_sig) if len(diff_sig) > 0 else 0
-  result['max_fall_rate'] = np.min(diff_sig) if len(diff_sig) > 0 else 0
-  result['peak_to_rms'] = abs_sig_max / (np.sqrt(np.mean(sig ** 2)) + 1e-10)
+  max_rise_rate = float(np.max(diff_sig) if len(diff_sig) > 0 else 0)
+  max_fall_rate = float(np.min(diff_sig) if len(diff_sig) > 0 else 0)
+  peak_to_rms = float(abs_sig_max / (np.sqrt(np.mean(sig ** 2)) + 1e-10))
 
   fft_resolution = sig.size / sample_rate
 
@@ -157,13 +169,24 @@ def characteristics(signal: np.ndarray, **kwargs):
   lf_mag = magnitude[int(lf_min_freq * fft_resolution):int(lf_max_freq * fft_resolution)]
   hf_mag = magnitude[int(lf_max_freq * fft_resolution):int(hf_max_freq * fft_resolution)]
 
-  result['lf_energy_ratio'] = (np.sum(lf_mag) / magnitude_sum)
-  result['hf_energy_ratio'] = (np.sum(hf_mag) / magnitude_sum)
+  lf_energy_ratio = float(np.sum(lf_mag) / magnitude_sum)
+  hf_energy_ratio = float(np.sum(hf_mag) / magnitude_sum)
 
-  result['envelope_mean'] = np.mean(abs_sig)
-  result['envelope_std'] = np.std(abs_sig)
+  envelope_mean = float(np.mean(abs_sig))
+  envelope_std = float(np.std(abs_sig))
 
   autocorr = np.correlate(sig, sig, mode='full')
   autocorr = autocorr[len(autocorr)//2:]
-  result['autocorr_peak_ratio'] = autocorr[1] / autocorr[0] if autocorr[0] > 0 else 0
-  return result
+  autocorr_peak_ratio = float(autocorr[1] / autocorr[0] if autocorr[0] > 0 else 0)
+
+  return SignalFeatures(
+    impusle_duration=impulse_duration,
+    max_rise_rate=max_rise_rate,
+    max_fall_rate=max_fall_rate,
+    peak_to_rms=peak_to_rms,
+    lf_energy_ratio=lf_energy_ratio,
+    hf_energy_ratio=hf_energy_ratio,
+    envelope_mean=envelope_mean,
+    envelope_std=envelope_std,
+    autocorr_peak_ratio=autocorr_peak_ratio
+  )
