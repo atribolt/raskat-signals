@@ -73,6 +73,10 @@ class SignalFile:
   def end_time(self) -> datetime:
     return self.begin_time + self.interval * len(self.samples)
 
+  @property
+  def duration(self) -> timedelta:
+    return self.begin_time - self.end_time
+
   @staticmethod
   def create(source):
     log = getLogger('SignalFile::create')
@@ -144,8 +148,6 @@ def characteristics(signal: np.ndarray, **kwargs) -> SignalFeatures:
   hf_max_freq = int(kwargs.get('hf_max_freq', 100_000))
   sample_rate = int(kwargs.get('sample_rate', 500_000))
   k_threshold = float(kwargs.get('k_threshold', 0.5))
-
-  result = {}
 
   sig = signal - np.mean(signal)
   abs_sig = np.abs(sig)

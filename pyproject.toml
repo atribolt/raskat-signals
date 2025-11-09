@@ -21,8 +21,8 @@ include = ["raskat_signals*"]
 version = {attr="raskat_signals.version.VERSION"}
 
 [project.optional-dependencies]
-dev = ["ruff", "build"]
-visualize = ["matplotlib", "scipy"]
+dev = ["ruff", "build", "matplotlib", "scipy>=1.11.4"]
+
 
 [project.scripts]
 raskat-signal = "raskat_signals.visualize:main"
