@@ -75,7 +75,7 @@ class SignalFile:
 
   @property
   def duration(self) -> timedelta:
-    return self.begin_time - self.end_time
+    return self.end_time - self.begin_time
 
   @staticmethod
   def create(source):
